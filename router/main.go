@@ -23,7 +23,7 @@ func MainRouter() *gin.Engine {
 	r.Use(middleware.Logging())
 	r.Use(middleware.ErrorHandle())
 
-	//	r.LoadHTMLGlob("view/html/*")
+	r.LoadHTMLGlob("view/html/*")
 
 	/*home page*/
 	r.GET("/", serve.GetRoot)

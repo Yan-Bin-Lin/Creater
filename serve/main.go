@@ -116,8 +116,9 @@ func GetBlog(c *gin.Context, dir string) {
 	}
 
 	// blog not found, get project
-	c.JSON(http.StatusOK, gin.H{
-		"blog": blogData,
+	c.HTML(http.StatusOK, "index.tmpl", gin.H{
+		"title": blogData.Name,
+		"body":  blogData,
 	})
 }
 
