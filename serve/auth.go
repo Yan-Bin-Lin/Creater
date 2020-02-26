@@ -1,12 +1,6 @@
 package serve
 
-import (
-	"app/database"
-	"app/util/random"
-	"errors"
-	"github.com/gin-gonic/gin"
-)
-
+/*
 // generate a new refresh token
 func NewRefrshToken(c gin.Context, userName string, uid uint64) (string, error) {
 
@@ -63,4 +57,4 @@ func GetuidByToken(authType, token string) (uint64, error) {
 	}
 
 	return result, nil
-}
+}*/

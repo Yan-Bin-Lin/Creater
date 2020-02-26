@@ -98,7 +98,8 @@ func GetBlog(path string) (*BlogOut, error) {
 
 // if bid = 0 then insert a new blog else update blog
 func PutBlog(oid, owner, projUrl, bid, blog, pid, num, descript, typeid, filepath string, catid *string) error {
-	return checkAffect(db.Exec("call put_blog(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", oid, owner, projUrl, bid, blog, pid, catid, num, descript, typeid, filepath))
+	_, err := db.Exec("call put_blog(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", oid, owner, projUrl, bid, blog, pid, catid, num, descript, typeid, filepath)
+	return err
 }
 
 // delete a blog

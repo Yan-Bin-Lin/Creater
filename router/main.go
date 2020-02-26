@@ -70,18 +70,25 @@ func PutWork(c *gin.Context) {
 		log.Warn(c, 2400001, err, "binding error of put multipart form", "binding error of put multipart form")
 	}
 
+	// check prom kew exist exist
+	if len(form.Value["WorkType"]) == 0 {
+		log.Warn(c, 2400001, nil, "multy part form miss match key WorkType")
+		return
+	}
+
 	if form.Value["WorkType"][0] == "blog" {
 		serve.PutBlog(c, form, hash.GetHashString(c.Param("owner"), c.Param("work")))
 	} else if form.Value["WorkType"][0] == "project" {
+		log.Debug(c.Param("work"))
 		serve.PutProject(c, form, hash.GetHashString(c.Param("owner"), c.Param("work")))
 	} else {
-		log.Warn(c, 2400001, err, "miss match key WorkType", "miss match key WorkType")
+		log.Warn(c, 2400001, err, "multy part form miss match key WorkType")
 	}
 }
 
 // route to delete blog or project
 func DelWork(c *gin.Context) {
-	dir := hash.GetHashString(c.Param("owner") + c.Param("work"))
+	dir := hash.GetHashString(c.Param("owner"), c.Param("work"))
 	if file.IsExist(setting.Servers["main"].FilePath, dir) {
 		serve.DelBlog(c, dir)
 	} else {

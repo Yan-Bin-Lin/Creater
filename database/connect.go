@@ -17,9 +17,18 @@ var (
 
 func init() {
 	// connect database sql.Open("mysql", "user:password@/dbname")
-	var err error
-	db, err = xorm.NewEngine(setting.DBs["main"].Driver,
-		fmt.Sprintf("%s:%s@/%s?%s", setting.DBs["main"].User, setting.DBs["main"].Password, setting.DBs["main"].Name, setting.DBs["main"].Param))
+	var (
+		err        error
+		connectStr string
+	)
+
+	if setting.Servers["main"].RunMode == "debug" {
+		connectStr = fmt.Sprintf("%s:%s@/%s?%s", setting.DBs["test"].User, setting.DBs["test"].Password, setting.DBs["test"].Name, setting.DBs["test"].Param)
+	} else {
+		connectStr = fmt.Sprintf("%s:%s@/%s?%s", setting.DBs["main"].User, setting.DBs["main"].Password, setting.DBs["main"].Name, setting.DBs["main"].Param)
+	}
+
+	db, err = xorm.NewEngine(setting.DBs["main"].Driver, connectStr)
 	if err != nil {
 		panic(err)
 	}
