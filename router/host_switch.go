@@ -135,11 +135,11 @@ func cleanPath(p string) string {
 	}
 
 	/*
-	// Re-append trailing slash
-	if trailing && w > 1 {
-		bufApp(&buf, p, w, '/')
-		w++
-	}
+		// Re-append trailing slash
+		if trailing && w > 1 {
+			bufApp(&buf, p, w, '/')
+			w++
+		}
 	*/
 
 	// If the original string was not modified (or only shortened at the end),

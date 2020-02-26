@@ -1,18 +1,21 @@
 package serve
 
-import "testing"
+import (
+	"testing"
+)
 
-func TestSplitProject(t *testing.T) {
+func Testserve_SplitProject(t *testing.T) {
 	type except struct {
 		project []string
-		blog string
+		blog    string
 	}
 
 	// build test table
 	var splitTest = []struct {
-		url string // input
+		url     string // input
 		except_ except // expected result
 	}{
+		{"/foo", except{[]string{"foo"}, ""}},
 		{"/foo/bar", except{[]string{"foo"}, "bar"}},
 		{"/foo/bar/blog", except{[]string{"foo", "bar"}, "blog"}},
 	}
