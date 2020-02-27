@@ -129,6 +129,7 @@ func DelProject(c *gin.Context, dir string) {
 /*blog*/
 
 func GetBlog(c *gin.Context, dir string) {
+
 	blogData, err := database.GetBlog(dir)
 	if err != nil {
 		log.Warn(c, 1500001, err, "Sorry, something error", "database error")
@@ -174,7 +175,11 @@ func PutBlog(c *gin.Context, form *multipart.Form, dir string) {
 	if form.Value["BlogType"][0] == "article" {
 		fileHeader := form.File["content"][0]
 		filename := hash.GetHashString(fileHeader.Filename)
-		go file.SaveMarkdown2Html(fileHeader, setting.Servers["main"].FilePath+"/"+dir, filename+".html")
+		go func() {
+			if err := file.SaveMarkdown2Html(fileHeader, setting.Servers["main"].FilePath+"/"+dir, filename+".html"); err != nil {
+				log.Warn(c, 1500001, err, "something error in write file", "something error in parse markdown")
+			}
+		}()
 		if err := file.SaveMulipart(fileHeader, setting.Servers["main"].FilePath+"/"+dir, filename+".md"); err != nil {
 			log.Warn(c, 1500001, err, "something error in write file")
 			return

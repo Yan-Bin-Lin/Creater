@@ -46,6 +46,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+/*
 func TestDatabse_PutOwner_Insert(t *testing.T) {
 	err := PutOwner("0", "1", uniqueName, nickNmae)
 	if err != nil {
@@ -268,6 +269,32 @@ func TestDatabase_DelBlog(t *testing.T) {
 	} else if out != nil {
 		t.Errorf("Fail to delete blog %s. out blog is %v\n", projName, out)
 	}
+}
+
+func TestDatabase_PutUser(t *testing.T) {
+	PutUser("0", "newuser", "password", "email", "salt")
+}
+
+func TestDatabase_Login(t *testing.T) {
+	userdata, _ := Login("testapp", "password")
+	t.Log(userdata)
+}
+
+
+func TestDatabase_PutUser_Update(t *testing.T) {
+	PutUser("2", "newuser", "newpassword", "email", "salt")
+}
+
+func TestDatabase_NewAccessToken(t *testing.T) {
+	NewAccessToken("1", "token")
+}
+
+*/
+
+func TestDatabase_CheckAccessToken(t *testing.T) {
+	b, e := CheckAccessToken("1", "token", "uniname")
+	t.Log(b)
+	t.Log(e)
 }
 
 // new a database with table

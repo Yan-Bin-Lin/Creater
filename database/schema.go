@@ -69,6 +69,12 @@ type Article struct {
 }
 
 /* parse to html response */
+type UserOut struct {
+	Uid      int    `json:"uid" xorm:"not null pk autoincr INT(11) 'uid'"`
+	Username string `json:"username" xorm:"not null comment('account number') VARCHAR(40) 'username'"`
+	Owner    `xorm:"extends"`
+}
+
 type OwnerOut struct {
 	Owner   `xorm:"extends"`
 	Project `xorm:"extends"`

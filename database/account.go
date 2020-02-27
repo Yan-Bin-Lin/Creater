@@ -1,0 +1,35 @@
+package database
+
+func Login(userName string, password string) (*UserOut, error) {
+	userData := &UserOut{}
+	has, err := db.SQL("call login(?, ?)", userName, password).Get(userData)
+	if err != nil {
+		return nil, err
+	} else if !has {
+		return nil, nil
+	}
+
+	return userData, nil
+}
+
+// return user page
+func GetUser(uid int) (*UserOut, error) {
+	userData := &UserOut{}
+	has, err := db.SQL("call get_user(?)", uid).Get(userData)
+	if err != nil {
+		return nil, err
+	} else if !has {
+		return nil, nil
+	}
+	return userData, nil
+}
+
+// insert an user if oid is 0 else update
+func PutUser(uid, username, password, email, salt string) error {
+	return checkAffect(db.Exec("call put_user(?, ?, ?, ?, ?)", uid, username, password, email, salt))
+}
+
+// delect an user
+func DelUser(uid, username, password string) error {
+	return checkAffect(db.Exec("call del_user(?, ?, ?)", uid, username, password))
+}
