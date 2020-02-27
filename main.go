@@ -12,14 +12,13 @@ import (
 var hs router.HostSwitch
 
 func main() {
-	mainRouter := router.MainRouter()
 	//	accountRouter := router.AcountRouter()
 	//	assetRouter := router.AssetRouter()
 
 	// Make a new HostSwitch and insert the router (our http handler)
 	hs = make(router.HostSwitch)
-	hs[fmt.Sprintf("%s:%d", setting.Servers["main"].Host, setting.Servers["main"].Port)] = mainRouter
-	//	hs[fmt.Sprintf("%s:%d", setting.Servers["account"].Host, setting.Servers["account"].Port)] = accountRouter
+	hs[fmt.Sprintf("%s:%d", setting.Servers["main"].Host, setting.Servers["main"].Port)] = router.MainRouter()
+	hs[fmt.Sprintf("%s:%d", setting.Servers["account"].Host, setting.Servers["account"].Port)] = router.AccountRouter()
 	//	hs[fmt.Sprintf("%s:%d", setting.Servers["asset"].Host, setting.Servers["asset"].Port)] = assetRouter
 
 	s := &http.Server{

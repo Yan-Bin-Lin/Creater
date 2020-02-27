@@ -37,7 +37,7 @@ func MainRouter() *gin.Engine {
 	/*auth*/
 	owner := r.Group("/:owner")
 	{
-		// owner.Use(middleware.Auth())
+		owner.Use(middleware.Auth())
 		owner.PUT("", serve.PutOwner)
 		owner.DELETE("", serve.DelOwner)
 		work := owner.Group("/*work")
@@ -79,7 +79,6 @@ func PutWork(c *gin.Context) {
 	if form.Value["WorkType"][0] == "blog" {
 		serve.PutBlog(c, form, hash.GetHashString(c.Param("owner"), c.Param("work")))
 	} else if form.Value["WorkType"][0] == "project" {
-		log.Debug(c.Param("work"))
 		serve.PutProject(c, form, hash.GetHashString(c.Param("owner"), c.Param("work")))
 	} else {
 		log.Warn(c, 2400001, err, "multy part form miss match key WorkType")

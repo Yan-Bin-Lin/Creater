@@ -100,7 +100,6 @@ func PutProject(c *gin.Context, form *multipart.Form, dir string) {
 	if len(projs) > 2 {
 		superUrl = hash.GetHashString(c.Param("owner"), strings.Join(projs[:len(projs)-1], "/"))
 	}
-	log.Debug(dir)
 
 	err := database.PutProject(c.Param("owner"), projs[1:], form.Value["oid"][0],
 		form.Value["superid"][0], superUrl, form.Value["pid"][0], form.Value["descript"][0], dir)
@@ -161,7 +160,6 @@ func PutBlog(c *gin.Context, form *multipart.Form, dir string) {
 	//(oid, owner, projUrl, bid, blog, pid, num, descript, typeid, filepath string, catid *string)
 	// put to database
 	projs, blog := splitWork(c.Param("work"))
-	log.Debug("", "/"+strings.Join(projs, "/"))
 	err := database.PutBlog(form.Value["oid"][0], c.Param("owner"),
 		hash.GetHashString(c.Param("owner"), "/"+strings.Join(projs, "/")),
 		form.Value["bid"][0], blog, form.Value["pid"][0], form.Value["num"][0],

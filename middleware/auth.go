@@ -22,6 +22,7 @@ func Auth() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		log.Debug("", accessCookie)
 
 		// check access
 		param, err := url.ParseQuery(accessCookie.Value)
