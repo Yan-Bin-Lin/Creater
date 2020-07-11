@@ -4,6 +4,8 @@ import (
 	"app/middleware"
 	"app/serve"
 	"app/setting"
+	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,9 +16,15 @@ func AccountRouter() *gin.Engine {
 	r.Use(middleware.Logging())
 	r.Use(middleware.ErrorHandle())
 
-	r.LoadHTMLGlob("view/html/*")
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{fmt.Sprintf("http://%s:%d", setting.Servers["main"].Host, setting.Servers["main"].Port)}
+	config.AllowCredentials = true
+	r.Use(cors.New(config))
+
+	r.LoadHTMLGlob("view/html/*/*")
 
 	r.POST("/login", serve.Login)
+	//r.POST("/user/:user/*owner", serve.Login)
 
 	return r
 }

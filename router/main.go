@@ -1,13 +1,9 @@
 package router
 
 import (
-	"app/log"
 	"app/middleware"
 	"app/serve"
 	"app/setting"
-	"app/util/file"
-	"app/util/hash"
-
 	//ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	//"go.uber.org/zap"
@@ -23,27 +19,29 @@ func MainRouter() *gin.Engine {
 	r.Use(middleware.Logging())
 	r.Use(middleware.ErrorHandle())
 
-	r.LoadHTMLGlob("view/html/*")
+	r.LoadHTMLGlob("view/html/**/*")
 
 	/*home page*/
 	r.GET("/", serve.GetRoot)
 
 	/*owner*/
-	r.GET("/:owner", serve.GetOwner)
+	r.GET("/:owner", GetOwner)
 
 	/*works*/
-	r.GET("/:owner/*work", GetWork)
+	r.GET("/:owner/*work", serve.GetBlog)
 
 	/*auth*/
 	owner := r.Group("/:owner")
 	{
 		owner.Use(middleware.Auth())
-		owner.PUT("", serve.PutOwner)
+		owner.POST("", serve.CreateOwner)
+		owner.PUT("", serve.UpdateOwner)
 		owner.DELETE("", serve.DelOwner)
 		work := owner.Group("/*work")
 		{
-			work.PUT("", PutWork)
-			work.DELETE("", DelWork)
+			work.POST("", serve.CreateBlog)
+			work.PUT("", serve.UpdateBlog)
+			work.DELETE("", serve.DelBlog)
 		}
 		//owner.POST("/*project", serve.PostProject)
 		//owner.PUT("/*work", PutWork)
@@ -53,6 +51,17 @@ func MainRouter() *gin.Engine {
 	return r
 }
 
+// handle for get owner route
+func GetOwner(c *gin.Context) {
+	if c.Request.URL.Path == "/favicon.ico" {
+		c.Abort()
+		return
+	} else {
+		serve.GetOwner(c)
+	}
+}
+
+/*
 // route to get blog or project
 func GetWork(c *gin.Context) {
 	dir := hash.GetHashString(c.Param("owner"), c.Param("work"))
@@ -89,8 +98,9 @@ func PutWork(c *gin.Context) {
 func DelWork(c *gin.Context) {
 	dir := hash.GetHashString(c.Param("owner"), c.Param("work"))
 	if file.IsExist(setting.Servers["main"].FilePath, dir) {
-		serve.DelBlog(c, dir)
+		serve.DelBlog(c)
 	} else {
 		serve.DelProject(c, dir)
 	}
 }
+*/

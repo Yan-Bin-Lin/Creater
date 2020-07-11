@@ -28,7 +28,26 @@ var Params = struct {
 }
 
 func Login(c *gin.Context) {
-	userData, err := database.Login(c.PostForm("username"), c.PostForm("password"))
+	// get salt
+	userName := c.PostForm("username")
+	salt, err := database.GetSalt(userName)
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "database error of login")
+		return
+	} else if salt == "" {
+		log.Warn(c, 2400001, err, "worng username or password", "")
+		return
+	}
+
+	// get hash password
+	pw, err := hash.GetPWHashString(c.PostForm("password"), salt, Params.iterations, Params.memory, Params.parallelism, Params.keyLength)
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "base64 decode error")
+		return
+	}
+
+	// login
+	userData, err := database.Login(userName, pw)
 	if err != nil {
 		log.Warn(c, 1500001, err, "Sorry, something error", "database error of login")
 		return
@@ -69,7 +88,7 @@ func Login(c *gin.Context) {
 // insert an user if oid is 0 else update
 func PutUser(c *gin.Context) {
 
-	pw, salt, err := hash.GetPWHashString(c.PostForm("password"), Params.iterations, Params.memory, Params.parallelism, Params.keyLength)
+	pw, salt, err := hash.NewPWHashString(c.PostForm("password"), Params.iterations, Params.memory, Params.parallelism, Params.keyLength)
 	if err != nil {
 		log.Error(c, 1500001, err, 0, "Sorry, something error", "rand function error")
 		return
@@ -101,6 +120,34 @@ func newAccessToken(uid string) (string, error) {
 }
 
 // check access token vaild
-func CheckAccessToken(uid, code, owner string) (bool, error) {
-	return database.CheckAccessToken(uid, code, owner)
+func CheckAccessToken(c *gin.Context) {
+
+	var (
+		accessCookie *http.Cookie
+		err          error
+	)
+
+	// check cookie
+	if accessCookie, err = c.Request.Cookie("AccessToken"); err != nil {
+		log.Warn(c, 2401504, err, "access token not found in cookie")
+		c.Abort()
+		return
+	}
+
+	// check access
+	param, err := url.ParseQuery(accessCookie.Value)
+	if err != nil {
+		log.Warn(c, 2401504, err, "access token parse fail")
+		c.Abort()
+		return
+	}
+	if has, err := database.CheckAccessToken(param.Get("uid"), param.Get("AccessCode"), c.PostForm("oid")); err != nil {
+		log.Warn(c, 1500006, err, "Sorry, something error", "database error of check access token")
+		c.Abort()
+		return
+	} else if !has {
+		log.Warn(c, 2401504, err, "access token parse fail")
+		c.Abort()
+		return
+	}
 }

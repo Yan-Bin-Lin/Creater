@@ -19,7 +19,7 @@ func main() {
 	hs = make(router.HostSwitch)
 	hs[fmt.Sprintf("%s:%d", setting.Servers["main"].Host, setting.Servers["main"].Port)] = router.MainRouter()
 	hs[fmt.Sprintf("%s:%d", setting.Servers["account"].Host, setting.Servers["account"].Port)] = router.AccountRouter()
-	//	hs[fmt.Sprintf("%s:%d", setting.Servers["asset"].Host, setting.Servers["asset"].Port)] = assetRouter
+	hs[fmt.Sprintf("%s:%d", setting.Servers["asset"].Host, setting.Servers["asset"].Port)] = router.AssetRouter()
 
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%d", setting.Servers["main"].Port),

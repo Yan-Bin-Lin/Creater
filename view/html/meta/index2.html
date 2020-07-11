@@ -1,0 +1,36 @@
+{{define "index333"}}
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .title }}</title>
+    <style>
+        .meta {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<form id="login-form" action="http://account.local.com:8000/login" method="post">
+    <label>
+        用戶名：<input name='user'>
+    </label>
+    <label>
+        密碼：<input name='password' type='password'>
+    </label>
+    <button type="submit">登入</button>
+</form>
+<div id="meta" class="meta">
+    {{ .meta }}
+</div>
+<div id="content">
+    {{template "content"}}
+</div>
+<link rel="stylesheet" href="http://asset.local.com:8000/static/css/style.css">
+<script rel="script" src="http://asset.local.com:8000/static/js/test.js"></script>
+<script type="text/javascript">
+
+</script>
+</body>
+</html>
+{{end}}

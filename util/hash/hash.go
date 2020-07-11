@@ -20,7 +20,7 @@ func GetHashString(strs ...string) string {
 }
 
 // get hash of argon2 for password hash
-func GetPWHash(pw string, time, memory uint32, threads uint8, keyLen uint32) ([]byte, []byte, error) {
+func NewPWHash(pw string, time, memory uint32, threads uint8, keyLen uint32) ([]byte, []byte, error) {
 	salt, err := random.GetRandomBytes(16)
 	if err != nil {
 		return nil, nil, err
@@ -30,11 +30,21 @@ func GetPWHash(pw string, time, memory uint32, threads uint8, keyLen uint32) ([]
 }
 
 // get hash string in base64 url raw encode of argon2 for password hash
-func GetPWHashString(pw string, time, memory uint32, threads uint8, keyLen uint32) (string, string, error) {
-	hash, salt, err := GetPWHash(pw, time, memory, threads, keyLen)
+func NewPWHashString(pw string, time, memory uint32, threads uint8, keyLen uint32) (string, string, error) {
+	hash, salt, err := NewPWHash(pw, time, memory, threads, keyLen)
 	if err != nil {
 		return "", "", nil
 	}
 
 	return base64.RawURLEncoding.EncodeToString(hash), base64.RawURLEncoding.EncodeToString(salt), nil
+}
+
+// get hash string in base64 url raw encode of argon2 for password hash
+func GetPWHashString(pw, salt string, time, memory uint32, threads uint8, keyLen uint32) (string, error) {
+	saltByte, err := base64.RawURLEncoding.DecodeString(salt)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(argon2.IDKey([]byte(pw), saltByte, time, memory, threads, keyLen)), nil
 }

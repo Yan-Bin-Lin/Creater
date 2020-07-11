@@ -1,29 +1,51 @@
 package serve
 
 import (
+	"app/common"
 	"app/database"
 	"app/log"
 	"app/setting"
 	"app/util/file"
-	"app/util/hash"
-	"errors"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 )
 
 var (
-	putBlogParam = []string{"category", "bid", "oid", "pid", "num", "descript", "BlogType"}
-	putProjParam = []string{"oid", "superid", "pid", "descript"}
-	blogType     = map[string]string{"article": "1"}
+	createBlogParam = []string{"oid", "superid", "descript", "blogType"}
+	updateBlogParam = append(createBlogParam, "bid", "newsuperid", "newname", "newsuperUrl")
+	blogType        = map[string]string{"project": "1", "article": "2"}
 )
 
 /*home page*/
 
 // get root
 func GetRoot(c *gin.Context) {
-	log.Error(c, 1500001, errors.New("test error"), 0, "public msg", "private msg")
+	blogDatas, err := database.GetRoot(c.DefaultQuery("p", "1"))
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "database error of getting root page")
+		return
+	}
+
+	meta, err := json.Marshal(blogDatas)
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "parse json error")
+		return
+	}
+
+	// return root page data
+	c.HTML(http.StatusOK, "index", gin.H{
+		"meta":        string(meta),
+		"title":       "Creater",
+		"description": "create your blog",
+		"author":      "林彥賓, https://github.com/Yan-Bin-Lin",
+		"root":        true,
+		"list":        true,
+	})
 }
 
 /*owner*/
@@ -32,26 +54,56 @@ func GetOwner(c *gin.Context) {
 	// check project exist
 	ownerData, err := database.GetOwner(c.Param("owner"))
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error of get owner")
+		log.Warn(c, 1500001, err, "Sorry, something error", "database error of getting owner")
 		return
 	}
 
-	// blog not found, get project
-	c.JSON(http.StatusOK, gin.H{
-		"ownerData": ownerData,
+	// drop uid
+	ownerData.Uid = 0
+
+	meta, err := json.Marshal(ownerData)
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "parse json error")
+		return
+	}
+
+	// return owner with blog
+	c.HTML(http.StatusOK, "index", gin.H{
+		"meta":        string(meta),
+		"title":       ownerData.Nickname,
+		"description": ownerData.Description,
+		"list":        true,
 	})
 }
 
-// put a new owner
-func PutOwner(c *gin.Context) {
-	if err := database.PutOwner(c.PostForm("oid"), c.PostForm("uid"), c.PostForm("uniquename"), c.PostForm("nickname")); err != nil {
+// create a new owner
+func CreateOwner(c *gin.Context) {
+	if err := database.CreateOwner(c.PostForm("uid"), c.PostForm("uniquename"), c.PostForm("nickname"), c.PostForm("descript")); err != nil {
 		if err == database.ERR_NAME_CONFLICT {
-			log.Warn(c, 2400001, err, "Name conflict of put owner")
+			log.Warn(c, 2400001, err, "Name conflict of create owner")
 		} else if err == database.ERR_TASK_FAIL {
 			log.Warn(c, 2400001, err, "put owner fail, please check oid and uid correct")
 		} else {
-			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of put owner")
+			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of create owner")
 		}
+		return
+	}
+
+	c.Header("Location", "/.")
+	c.Status(http.StatusCreated)
+}
+
+// update a new owner
+func UpdateOwner(c *gin.Context) {
+	if err := database.UpdateOwner(c.PostForm("uid"), c.PostForm("oid"), c.PostForm("uniquename"), c.PostForm("newuniname"), c.PostForm("nickname"), c.PostForm("descript")); err != nil {
+		if err == database.ERR_NAME_CONFLICT {
+			log.Warn(c, 2400001, err, "Name conflict of update owner")
+		} else if err == database.ERR_TASK_FAIL {
+			log.Warn(c, 2400001, err, "put owner fail, please check oid and uid correct")
+		} else {
+			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of update owner")
+		}
+		return
 	}
 
 	c.Header("Location", "/.")
@@ -69,56 +121,8 @@ func DelOwner(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusResetContent)
-}
-
-/*project*/
-
-func GetProject(c *gin.Context, dir string) {
-	// check project exist
-	projDatas, err := database.GetProject(dir)
-	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error")
-		return
-	}
-
-	// blog not found, get project
-	c.JSON(http.StatusOK, gin.H{
-		"project": projDatas,
-	})
-}
-
-func PutProject(c *gin.Context, form *multipart.Form, dir string) {
-	//func PutProject(owner string, proj []string, oid, superid, super_url, pid, descript, url string) error {
-	if v := checkParam(putProjParam, form); v != "" {
-		log.Warn(c, 2400001, nil, "multy part form key miss match "+v)
-		return
-	}
-
-	projs := strings.Split(c.Param("work"), "/")
-	superUrl := "0"
-	if len(projs) > 2 {
-		superUrl = hash.GetHashString(c.Param("owner"), strings.Join(projs[:len(projs)-1], "/"))
-	}
-
-	err := database.PutProject(c.Param("owner"), projs[1:], form.Value["oid"][0],
-		form.Value["superid"][0], superUrl, form.Value["pid"][0], form.Value["descript"][0], dir)
-	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error")
-		return
-	}
-
-	c.Header("Location", "/.")
-	c.Status(http.StatusCreated)
-}
-
-func DelProject(c *gin.Context, dir string) {
-	if err := database.DelProject(c.PostForm("oid"), c.PostForm("pid"), dir); err != nil {
-		if err == database.ERR_TASK_FAIL {
-			log.Warn(c, 2400001, err, "delete owner fail, please check oid and owner name correct")
-		} else {
-			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of delete owner")
-		}
+	if err := os.RemoveAll(setting.Servers["main"].FilePath + "/" + c.PostForm("oid")); err != nil {
+		log.Warn(c, 1500001, err, "something error in delete file")
 		return
 	}
 
@@ -127,69 +131,116 @@ func DelProject(c *gin.Context, dir string) {
 
 /*blog*/
 
-func GetBlog(c *gin.Context, dir string) {
-
-	blogData, err := database.GetBlog(dir)
+func GetBlog(c *gin.Context) {
+	blogData, err := database.GetBlog(c.Request.URL.Path)
 	if err != nil {
 		log.Warn(c, 1500001, err, "Sorry, something error", "database error")
 		return
-	}
-
-	// blog not found, get project
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{
-		"title": blogData.Name,
-		"body":  blogData,
-	})
-}
-
-func PutBlog(c *gin.Context, form *multipart.Form, dir string) {
-	// check form
-	if v := checkParam(putBlogParam, form); v != "" {
-		log.Warn(c, 2400001, nil, "multy part form miss match key "+v)
+	} else if blogData == nil {
+		log.Warn(c, 2400001, nil, "parmeter error", "parmeter error")
 		return
 	}
-	if len(form.File["content"]) == 0 {
+	log.Debug("", blogData)
+
+	meta, err := json.Marshal(blogData)
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "parse json error")
+		return
+	}
+
+	data := gin.H{
+		"title":       blogData.Name,
+		"meta":        string(meta),
+		"description": blogData.Description,
+		"owner":       blogData.OUniquename,
+		"nickname":    blogData.ONickname,
+		"updatetime":  blogData.Updatetime,
+	}
+
+	if blogData.Type == 1 {
+		data["list"] = true
+		err = file.ParseTmpl(c.Writer, data)
+	} else {
+		data["content"] = true
+		//get file
+		fileName := strconv.Itoa(blogData.Bid)
+
+		err = file.ParseTmpl(c.Writer, data, setting.Servers["main"].FilePath+"/"+strconv.Itoa(blogData.Oid)+"/"+fileName+"/"+fileName+".md")
+	}
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "read file error")
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func CreateBlog(c *gin.Context) {
+	// check form
+	form, err := common.BindMultipartForm(c, createBlogParam)
+	if err != nil {
+		return
+	}
+	log.Debug("", form)
+	if form.Value["blogType"][0] != "project" && len(form.File["content"]) == 0 {
 		log.Warn(c, 2400001, nil, "multy part form miss match key content")
 		return
 	}
 
-	cat := &form.Value["category"][0]
-	if *cat == "0" {
-		cat = nil
-	}
-	//(oid, owner, projUrl, bid, blog, pid, num, descript, typeid, filepath string, catid *string)
-	// put to database
-	projs, blog := splitWork(c.Param("work"))
-	err := database.PutBlog(form.Value["oid"][0], c.Param("owner"),
-		hash.GetHashString(c.Param("owner"), "/"+strings.Join(projs, "/")),
-		form.Value["bid"][0], blog, form.Value["pid"][0], form.Value["num"][0],
-		form.Value["descript"][0], blogType[form.Value["BlogType"][0]], dir, cat)
+	// create to database
+	superUrl, blog := splitWork(c.Request.URL.Path)
+	err = database.CreateBlog(form.Value["oid"][0], form.Value["superid"][0], blog, form.Value["descript"][0], blogType[form.Value["blogType"][0]], strings.Join(superUrl, "/"))
 	if err != nil {
 		log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of update blog")
 		return
 	}
 
+	// get data
+	blogData, err := database.GetBlog(c.Request.URL.Path)
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error", "database error")
+		return
+	}
+
 	// write file
-	if form.Value["BlogType"][0] == "article" {
-		fileHeader := form.File["content"][0]
-		filename := hash.GetHashString(fileHeader.Filename)
-		go func() {
-			if err := file.SaveMarkdown2Html(fileHeader, setting.Servers["main"].FilePath+"/"+dir, filename+".html"); err != nil {
-				log.Warn(c, 1500001, err, "something error in write file", "something error in parse markdown")
-			}
-		}()
-		if err := file.SaveMulipart(fileHeader, setting.Servers["main"].FilePath+"/"+dir, filename+".md"); err != nil {
-			log.Warn(c, 1500001, err, "something error in write file")
-			return
-		}
+	if form.Value["blogType"][0] == "article" {
+		writeFile(c, form, strconv.Itoa(blogData.Bid))
 	}
 
 	c.Header("Location", "/.")
 	c.Status(http.StatusCreated)
 }
 
-func DelBlog(c *gin.Context, dir string) {
-	if err := database.DelBlog(c.PostForm("oid"), c.PostForm("pid"), c.PostForm("bid"), dir); err != nil {
+func UpdateBlog(c *gin.Context) {
+	// check form
+	form, err := common.BindMultipartForm(c, updateBlogParam)
+	if err != nil {
+		return
+	}
+
+	// check param update to database
+	_, blog := splitWork(c.Request.URL.Path)
+	// new super should be -1 if no update super
+	// new name should be "" if no update name
+	err = database.UpdateBlog(form.Value["oid"][0], form.Value["superid"][0], form.Value["newsuperid"][0],
+		form.Value["bid"][0], blog, form.Value["newname"][0], form.Value["descript"][0], c.Request.URL.Path,
+		form.Value["newsuperUrl"][0])
+	if err != nil {
+		log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of update blog")
+		return
+	}
+
+	// write file
+	if form.Value["blogType"][0] == "article" && len(form.File["content"]) != 0 {
+		writeFile(c, form, form.Value["bid"][0])
+	}
+
+	c.Header("Location", c.Request.URL.Path)
+	c.Status(http.StatusCreated)
+}
+
+func DelBlog(c *gin.Context) {
+	if err := database.DelBlog(c.PostForm("oid"), c.PostForm("bid"), c.Request.URL.Path); err != nil {
 		if err == database.ERR_TASK_FAIL {
 			log.Warn(c, 2400001, err, "delete owner fail, please check oid and owner name correct")
 		} else {
@@ -198,22 +249,35 @@ func DelBlog(c *gin.Context, dir string) {
 		return
 	}
 
+	if err := os.RemoveAll(setting.Servers["main"].FilePath + "/" + c.PostForm("oid") + "/" + c.PostForm("bid")); err != nil {
+		log.Warn(c, 1500001, err, "something error in delete file")
+		return
+	}
+
 	c.Status(http.StatusResetContent)
 }
 
 // split url to slice of projects and last project or blog
 func splitWork(url string) ([]string, string) {
-	works := strings.Split(url, "/")[1:]
+	works := strings.Split(url, "/")
 	return works[:len(works)-1], works[len(works)-1]
 }
 
-// check form key match or not
-func checkParam(param []string, form *multipart.Form) string {
-	for _, v := range param {
-		if len(form.Value[v]) == 0 {
-			return v
-		}
+// write file and parse to html
+func writeFile(c *gin.Context, form *multipart.Form, fileName string) {
+	fileHeader := form.File["content"][0]
+	filePath := setting.Servers["main"].FilePath + "/" + form.Value["oid"][0] + "/" + fileName
+	// check exist and create
+	if err := file.Checkdir(filePath); err != nil {
+		log.Warn(c, 1500001, err, "something error in write file", "something error in create folder")
 	}
-
-	return ""
+	go func() {
+		if err := file.SaveMarkdown2Tmpl(fileHeader, filePath, fileName+".html"); err != nil {
+			log.Warn(c, 1500001, err, "something error in write file", "something error in parse markdown")
+		}
+	}()
+	if err := file.SaveFile(fileHeader, filePath, fileName+".md"); err != nil {
+		log.Warn(c, 1500001, err, "something error in write file")
+		return
+	}
 }

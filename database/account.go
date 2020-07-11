@@ -33,3 +33,14 @@ func PutUser(uid, username, password, email, salt string) error {
 func DelUser(uid, username, password string) error {
 	return checkAffect(db.Exec("call del_user(?, ?, ?)", uid, username, password))
 }
+
+func GetSalt(userName string) (string, error) {
+	var salt string
+	has, err := db.SQL("call get_user_salt(?)", userName).Get(&salt)
+	if err != nil {
+		return "", err
+	} else if !has {
+		return "", nil
+	}
+	return salt, nil
+}

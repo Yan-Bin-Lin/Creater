@@ -54,6 +54,14 @@ func Warn(c *gin.Context, code int, err error, CustomMsg ...string) {
 	LogErrorHandle(c, TaskFail, &LogErrorData{*errorReturn.ErrorData}, &LogErrorMeta{*errorReturn.ErrorMeta}, CustomMsg...)
 }
 
+// wrap logger warn, warn error.Error() can be ""
+// first custom msg should be message return to front end
+// second msg should be message for logging
+func WarnErr(c *gin.Context, err error) {
+	errorReturn := appErr.ErrorHandleErr(c, err) // skip this wrap
+	LogErrorHandle(c, TaskFail, &LogErrorData{*errorReturn.ErrorData}, &LogErrorMeta{*errorReturn.ErrorMeta})
+}
+
 // wrap logger error
 // first custom msg should be message return to front end
 // second msg should be message for logging

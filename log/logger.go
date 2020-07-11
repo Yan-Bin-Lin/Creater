@@ -57,6 +57,9 @@ type LogErrorMeta struct {
 
 // implement zap json-encode for ErrorMetaStruct
 func (f *LogErrorMeta) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if f.Msg != "" {
+		enc.AddString("Msg", f.Msg)
+	}
 	if f.Error != nil {
 		enc.AddString("Error", f.Error.Error())
 	}

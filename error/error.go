@@ -3,6 +3,7 @@ package error
 import (
 	"app/setting"
 	"app/util/debug"
+	"github.com/gin-gonic/gin"
 )
 
 // return error for log
@@ -11,7 +12,16 @@ type ErrorReturn struct {
 	ErrorMeta *ErrorMetaStruct
 }
 
-// struct of error message
+func (e *ErrorReturn) Error() string {
+	return e.ErrorData.Msg
+}
+
+// implement Unwrap for error in go 1.13
+func (e *ErrorReturn) Unwrap() error {
+	return e.ErrorMeta.Error
+}
+
+// struct of error message to let out
 type ErrorDataStruct struct {
 	Code int    `zap:"code"`
 	Msg  string `zap:"msg"`
@@ -19,6 +29,7 @@ type ErrorDataStruct struct {
 
 // error message for debug
 type ErrorMetaStruct struct {
+	Msg   string
 	Error error // origin error
 	Stack []*debug.FuncDataStruct
 }
@@ -42,11 +53,19 @@ func GetMsg(code int) string {
 }
 
 //generate new error data
-func NewErrorData(code int) *ErrorDataStruct {
-	return &ErrorDataStruct{
-		Code: code,
-		Msg:  GetMsg(code),
+func NewErrorData(code int, customMsg string) (eData *ErrorDataStruct) {
+	if customMsg != "" {
+		eData = &ErrorDataStruct{
+			Code: code,
+			Msg:  customMsg,
+		}
+	} else {
+		eData = &ErrorDataStruct{
+			Code: code,
+			Msg:  GetMsg(code),
+		}
 	}
+	return
 }
 
 // split error code
@@ -61,22 +80,50 @@ func SplitCode(code int) (int, int, int) {
 }
 
 //generate new error meta
-func NewErrorMeta(err error, stack []*debug.FuncDataStruct) *ErrorMetaStruct {
+func NewErrorMeta(err error, stack []*debug.FuncDataStruct, customMsg string) *ErrorMetaStruct {
 	return &ErrorMetaStruct{
+		Msg:   customMsg,
 		Error: err,
 		Stack: stack,
 	}
 }
 
 // new a error return struct
-func NewErrorReturn(code int, err error, stack []*debug.FuncDataStruct) *ErrorReturn {
+func NewErrorReturn(code int, err error, stack []*debug.FuncDataStruct, customMsg ...string) *ErrorReturn {
+	var (
+		errorData *ErrorDataStruct
+		errorMeta *ErrorMetaStruct
+	)
+
 	// check error msg
-	errorData := NewErrorData(code)
-	if errorData.Msg == setting.ErrorMap[0] {
-		if err != nil {
-			errorData.Msg = err.Error()
-		}
+	if len(customMsg) > 0 {
+		errorData = NewErrorData(code, customMsg[0])
+	} else {
+		errorData = NewErrorData(code, "")
+	}
+	/*
+		if errorData.Msg == setting.ErrorMap[0] {
+			if err != nil {
+				errorData.Msg = err.Error()
+			}
+		}*/
+	if len(customMsg) > 1 {
+		errorMeta = NewErrorMeta(err, stack, customMsg[1])
+	} else {
+		errorMeta = NewErrorMeta(err, stack, "")
 	}
 
-	return &ErrorReturn{errorData, NewErrorMeta(err, stack)}
+	return &ErrorReturn{errorData, errorMeta}
+}
+
+// return wrap error type
+func New(code int, err error, skip int, customMsg ...string) (er error) {
+	// NewErrorReturn
+	if setting.Servers["main"].RunMode == gin.DebugMode {
+		er = NewErrorReturn(code, err, debug.GetCallStack(skip+1), customMsg...) // skip this level
+	} else {
+		er = NewErrorReturn(code, err, nil, customMsg...)
+	}
+
+	return
 }

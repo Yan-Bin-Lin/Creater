@@ -1,0 +1,45 @@
+{{ define "navigation"}}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">Creater</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
+                    aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <div class="input-group my-1 hide">
+                    <input type="text" class="form-control" placeholder="Search for...">
+                    <span class="input-group-append">
+                <button class="btn btn-secondary" type="button">Go!</button>
+              </span>
+                </div>
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item active hide">
+                        <a class="nav-link" href="#">Home
+                            <span class="sr-only">(current)</span>
+                        </a>
+                    </li>
+                    <li id="UpdateBlogNav" class="nav-item active">
+                        <a class="nav-link" href="#UpdateBlog">編輯</a>
+                    </li>
+                    <li id="NewBlogNav" class="nav-item active">
+                        <a class="nav-link" href="#NewBlog">新專案</a>
+                    </li>
+                    <li id="ReturnNav" class="nav-item active hide">
+                        <a class="nav-link" href="">返回</a>
+                    </li>
+                    <li class="nav-item active">
+                        <button id="SigninBtn" type="button" class="btn btn-dark">登入</button>
+                    </li>
+                </ul>
+                <div class="input-group" style="width: 100px">
+                    <select class="custom-select btn-dark" id="inputGroupSelect03" style="background-color:black;color:white;">
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </nav>
+{{ end }}
