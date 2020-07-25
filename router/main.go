@@ -76,12 +76,12 @@ func GetWork(c *gin.Context) {
 func PutWork(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		log.Warn(c, 2400001, err, "binding error of put multipart form", "binding error of put multipart form")
+		logger.Warn(c, 2400001, err, "binding error of put multipart form", "binding error of put multipart form")
 	}
 
 	// check prom kew exist exist
 	if len(form.Value["WorkType"]) == 0 {
-		log.Warn(c, 2400001, nil, "multy part form miss match key WorkType")
+		logger.Warn(c, 2400001, nil, "multy part form miss match key WorkType")
 		return
 	}
 
@@ -90,7 +90,7 @@ func PutWork(c *gin.Context) {
 	} else if form.Value["WorkType"][0] == "project" {
 		serve.PutProject(c, form, hash.GetHashString(c.Param("owner"), c.Param("work")))
 	} else {
-		log.Warn(c, 2400001, err, "multy part form miss match key WorkType")
+		logger.Warn(c, 2400001, err, "multy part form miss match key WorkType")
 	}
 }
 

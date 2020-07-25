@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"app/log"
+	"app/logger"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -31,7 +31,7 @@ func Logging() gin.HandlerFunc {
 			end = end.UTC()
 		}
 
-		// get log msg
+		// get logger msg
 		var (
 			LogMsg *log.LogDataStruct
 			ok     = false
@@ -56,7 +56,7 @@ func Logging() gin.HandlerFunc {
 			lv = zap.InfoLevel
 		}
 
-		// write log
+		// write logger
 		if ce := log.Logger.Check(lv, path); ce != nil {
 			ce.Write(
 				zap.Int("status", c.Writer.Status()),

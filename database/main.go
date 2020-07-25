@@ -53,33 +53,6 @@ func DelOwner(oid, uid, owner string) error {
 	return checkAffect(db.Exec("call del_owner(?, ?, ?)", oid, uid, owner))
 }
 
-/*
-// return project by name
-func GetProject(url string) ([]ProjOut, error) {
-	projDatas := make([]ProjOut, 0)
-	err := db.SQL("call get_project(?)", url).Find(&projDatas)
-	if err != nil {
-		return nil, err
-	} else if len(projDatas) == 0 {
-		return nil, nil
-	}
-	return projDatas, nil
-}
-
-// update or insert a project
-func PutProject(owner string, proj []string, oid, superid, super_url, pid, descript, url string) error {
-	if len(proj) == 1 {
-		return checkAffect(db.Exec("call put_root_project(?, ?, ?, ?, ?, ?)", owner, oid, pid, proj[0], descript, url))
-	} else {
-		return checkAffect(db.Exec("call put_sub_project(?, ?, ?, ?, ?, ?, ?, ?)", owner, oid, superid, super_url, pid, proj[len(proj)-1], descript, url))
-	}
-}
-
-// delete project
-func DelProject(oid, pid, urlpath string) error {
-	return checkAffect(db.Exec("call del_project(?, ?, ?, ?)", oid, pid, urlpath))
-}
-*/
 // get blog with owner super project and category data
 func GetBlog(path string) (*BlogProj, error) {
 	blogData := &BlogProj{}
@@ -152,7 +125,7 @@ func getWorkSQL(check bool, owner string, proj []string, blog string, col ...str
 
 func GetBlogByName(owner string, proj []string, blog string) (*BlogProj, error) {
 	blogData := &BlogProj{}
-	log.Debug("", blogData)
+	logger.Debug("", blogData)
 	sql, args := getWorkSQL(false, owner, proj, blog, "owner.*", "blog.*", "category.name")
 	has, err := db.SQL(sql, args...).Get(blogData)
 	if err != nil {

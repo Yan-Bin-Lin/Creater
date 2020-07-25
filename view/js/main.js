@@ -136,7 +136,7 @@ function rend_content() {
     });
 
     // hide origin
-    content.after("<div id='metaContent' style='display:none'>" + context + "</div>>");
+    content.after("<div id='metaContent' style='display:none'>" + context + "</div>");
 }
 
 /*

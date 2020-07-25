@@ -1,7 +1,7 @@
 package common
 
 import (
-	"app/log"
+	"app/logger"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"mime/multipart"

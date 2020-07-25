@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/url"
 )
@@ -8,28 +9,25 @@ import (
 // We need an object that implements the http.Handler interface.
 // Therefore we need a type for which we implement the ServeHTTP method.
 // We just use a map here, in which we map host names (with port) to http.Handlers
-type HostSwitch map[string]http.Handler
+//type HostSwitch map[string]http.Handler
+type HostSwitch struct {
+	*gin.Engine
+}
 
 // Implement the ServeHTTP method on our new type
 func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check if a http.Handler is registered for the given host.
 	// If yes, use it to handle the request.
-	if handler := hs[r.Host]; handler != nil {
-		// clean path
-		path := cleanPath(r.URL.Path)
+	// clean path
+	path := cleanPath(r.URL.Path)
 
-		// update to request
-		r2 := new(http.Request)
-		*r2 = *r
-		r2.URL = new(url.URL)
-		*r2.URL = *r.URL
-		r2.URL.Path = path
-
-		handler.ServeHTTP(w, r2)
-	} else {
-		// Handle host names for which no handler is registered
-		http.Error(w, "Forbidden", 403) // Or Redirect?
-	}
+	// update to request
+	r2 := new(http.Request)
+	*r2 = *r
+	r2.URL = new(url.URL)
+	*r2.URL = *r.URL
+	r2.URL.Path = path
+	hs.Engine.ServeHTTP(w, r2)
 }
 
 // cleanPath is the URL version of path.Clean, it returns a canonical URL path

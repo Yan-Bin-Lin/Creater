@@ -1,4 +1,3 @@
-// declare editor
 let editor;
 // option of blog type
 let blogType;
@@ -46,7 +45,7 @@ function imageUpload(blob, callback) {
     let path = window.location.pathname.split("/").slice(1);
     let oid = path.length > 1 ? meta.boid : meta.oid;
     let name = geTimeNowStr();
-    let url = "http://asset.local.com:8000/file/img/" + oid + "/" + name;
+    let url = "http://asset.dcreater.com/file/img/" + oid + "/" + name;
     data.append('content', blob);
     data.append('fileName', name);
     data.append('oid', oid);
@@ -91,12 +90,12 @@ $("#EditorSubmitBtn").on("click", function (e) {
     let description = $("#NewBlogDescription").val();
     let type = blogType[$("#TypeSelect").val()];
     let content = new Blob([editor.getMarkdown()], {type: 'text/plain'});
-    let url = window.location.pathname + (ititialContent !== "" ? "" : "/" + name);
+    let url = window.location.pathname + (window.location.hash === "#UpdateBlog" ? "" : "/" + name);
     let path = window.location.pathname.split("/").slice(1);
     let oid = path.length > 1 ? meta.boid : meta.oid;
     let method = 'POST';
     let newSuperPath =  GetSuperURL(path);
-    let superid = (ititialContent !== "" ? meta.bsuper : (path.length > 1 ? meta.bid : 0));
+    let superid = (window.location.hash === "#UpdateBlog" ? meta.bsuper : (path.length > 1 ? meta.bid : 0));
 
     let data = new FormData();
     data.append('descript', description);
@@ -106,7 +105,7 @@ $("#EditorSubmitBtn").on("click", function (e) {
     if (type === "article") {
         data.append("content", content);
     }
-    if (ititialContent !== "") {
+    if (window.location.hash === "#UpdateBlog") {
         // update
         data.append("bid", meta.bid);
         data.append("newsuperid", -1);
@@ -126,7 +125,7 @@ $("#EditorSubmitBtn").on("click", function (e) {
         withCredentials: true,
         success: function (data) {
             // redirect
-            window.location.href = newSuperPath + "/" + (newName === "" ? meta.bname : newName);
+            window.location.href = window.location.hash === "#UpdateBlog" ? newSuperPath + "/" + (newName === "" ? meta.bname : newName) : url;
         },
         error: function (jqXHR, textStatus, errorThrown) {
             alert("sorry, something error in create blog. Please try again later");

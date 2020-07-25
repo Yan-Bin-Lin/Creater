@@ -1,6 +1,6 @@
 package database
 
-import "app/log"
+import "app/logger"
 
 // generate a new access token
 func NewAccessToken(uid, code string) error {

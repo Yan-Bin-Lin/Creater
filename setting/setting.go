@@ -32,6 +32,8 @@ type DBStruct struct {
 	User     string         `yaml:"user"`
 	Password string         `yaml:"password"`
 	Name     string         `yaml:"name"`
+	Host     string         `yaml:"host"`
+	Port     string         `yaml:"port"`
 	Param    string         `yaml:"param,omitempty"`
 	Option   map[string]int `yaml:"option,omitempty"`
 }
@@ -44,7 +46,7 @@ type ConfigStruct struct {
 type ErrorMapStruct map[int]string
 
 var (
-	WorkPath = "../config/app/"
+	WorkPath = "./config/app/"
 )
 
 func init() {

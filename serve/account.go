@@ -2,7 +2,7 @@ package serve
 
 import (
 	"app/database"
-	"app/log"
+	"app/logger"
 	"app/setting"
 	"app/util/hash"
 	"app/util/random"
@@ -73,8 +73,8 @@ func Login(c *gin.Context) {
 		Name:     "AccessToken",
 		Value:    params.Encode(),
 		MaxAge:   2592000, // 30 day
-		Path:     setting.Servers["main"].Host + ":8000",
-		Domain:   "local.com",
+		Path:     "/",
+		Domain:   "." + setting.Servers["main"].Host,
 		SameSite: http.SameSiteLaxMode,
 		Secure:   false,
 		HttpOnly: true,

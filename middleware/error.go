@@ -2,7 +2,7 @@ package middleware
 
 import (
 	appErr "app/error"
-	"app/log"
+	"app/logger"
 	"github.com/gin-gonic/gin"
 	"net"
 	"os"
@@ -41,7 +41,7 @@ func ErrorHandle() gin.HandlerFunc {
 			// if no error
 			err := c.Errors.Last()
 			if err == nil {
-				// log success
+				// logger success
 				log.Success(c)
 				return
 			}

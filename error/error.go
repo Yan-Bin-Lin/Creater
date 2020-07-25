@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// return error for log
+// return error for logger
 type ErrorReturn struct {
 	ErrorData *ErrorDataStruct
 	ErrorMeta *ErrorMetaStruct

@@ -3,30 +3,37 @@ package main
 import (
 	"app/router"
 	"app/setting"
-
-	"fmt"
 	"log"
 	"net/http"
+
+	"fmt"
+	"golang.org/x/sync/errgroup"
 )
 
-var hs router.HostSwitch
+var (
+	g errgroup.Group
+)
 
 func main() {
-	//	accountRouter := router.AcountRouter()
-	//	assetRouter := router.AssetRouter()
+	runServe("main", router.HostSwitch{router.MainRouter()})
 
-	// Make a new HostSwitch and insert the router (our http handler)
-	hs = make(router.HostSwitch)
-	hs[fmt.Sprintf("%s:%d", setting.Servers["main"].Host, setting.Servers["main"].Port)] = router.MainRouter()
-	hs[fmt.Sprintf("%s:%d", setting.Servers["account"].Host, setting.Servers["account"].Port)] = router.AccountRouter()
-	hs[fmt.Sprintf("%s:%d", setting.Servers["asset"].Host, setting.Servers["asset"].Port)] = router.AssetRouter()
+	runServe("account", router.HostSwitch{router.AccountRouter()})
 
-	s := &http.Server{
-		Addr:         fmt.Sprintf(":%d", setting.Servers["main"].Port),
-		Handler:      hs,
-		ReadTimeout:  setting.Servers["main"].ReadTimeout,
-		WriteTimeout: setting.Servers["main"].WriteTimeout,
+	runServe("asset", router.HostSwitch{router.AssetRouter()})
+
+	if err := g.Wait(); err != nil {
+		log.Fatal(err)
 	}
+}
 
-	log.Fatal(s.ListenAndServe())
+func runServe(serve string, hs router.HostSwitch)  {
+	s := &http.Server{
+		Addr:         fmt.Sprintf(":%d", setting.Servers[serve].Port),
+		Handler:      hs,
+		ReadTimeout:  setting.Servers[serve].ReadTimeout,
+		WriteTimeout: setting.Servers[serve].WriteTimeout,
+	}
+	g.Go(func() error {
+		return s.ListenAndServe()
+	})
 }
