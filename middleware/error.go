@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	appErr "app/error"
-	"app/logger"
+	"app/apperr"
+	"app/log"
 	"github.com/gin-gonic/gin"
 	"net"
 	"os"
@@ -29,10 +29,10 @@ func ErrorHandle() gin.HandlerFunc {
 				// detect error type
 				if brokenPipe {
 					// connect error, can't send to front
-					log.Error(c, 1500003, err.(error), 1)
+					log.Error(c, apperr.ErrConnectFail, err.(error), 1)
 				} else {
 					// system error, need to send to front
-					log.Error(c, 1500001, err.(error), 1, "Sorry, something error")
+					log.Error(c, apperr.ErrPermissionDenied, err.(error), 1, "Sorry, something apperr")
 				}
 
 				c.Abort()
@@ -41,32 +41,32 @@ func ErrorHandle() gin.HandlerFunc {
 			// if no error
 			err := c.Errors.Last()
 			if err == nil {
-				// logger success
+				// log success
 				log.Success(c)
 				return
 			}
 
 			// If the connection is dead, we can't write a status to it.
 			if !brokenPipe {
-				// get error meta
+				// get apperr meta
 				var (
 					code int
 					msg  string
 				)
 				switch err.Meta.(type) {
-				case *appErr.ErrorDataStruct:
-					meta := err.Meta.(*appErr.ErrorDataStruct)
+				case *apperr.ErrorDataStruct:
+					meta := err.Meta.(*apperr.ErrorDataStruct)
 					code = meta.Code
 					msg = meta.Msg
 				default:
 					// worng type or something error
 					code = 1500004
 					msg = "Sorry, Something error"
-					log.Warn(c, code, nil, msg)
+				log.Warn(c, code, nil, msg)
 				}
 
 				// return to client
-				_, httpStatus, _ := appErr.SplitCode(code)
+				_, httpStatus, _ := apperr.SplitCode(code)
 				c.JSON(httpStatus, gin.H{
 					"Code": code,
 					"Msg":  msg,

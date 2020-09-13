@@ -1,14 +1,16 @@
 package serve
 
 import (
+	"app/apperr"
+	"app/common"
 	"app/database"
-	"app/logger"
+	"app/log"
 	"app/setting"
+	"app/util/cookie"
 	"app/util/hash"
 	"app/util/random"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"net/url"
 	"strconv"
 )
 
@@ -32,27 +34,27 @@ func Login(c *gin.Context) {
 	userName := c.PostForm("username")
 	salt, err := database.GetSalt(userName)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error of login")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "database error of login")
 		return
 	} else if salt == "" {
-		log.Warn(c, 2400001, err, "worng username or password", "")
+		log.Warn(c, apperr.ErrWrongArgument, err, "wrong username or password")
 		return
 	}
 
 	// get hash password
 	pw, err := hash.GetPWHashString(c.PostForm("password"), salt, Params.iterations, Params.memory, Params.parallelism, Params.keyLength)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "base64 decode error")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "base64 decode error")
 		return
 	}
 
 	// login
 	userData, err := database.Login(userName, pw)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error of login")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "database error of login")
 		return
 	} else if userData == nil {
-		log.Warn(c, 2400001, err, "worng username or password")
+		log.Warn(c, apperr.ErrWrongArgument, err, "wrong username or password")
 		return
 	}
 
@@ -60,54 +62,56 @@ func Login(c *gin.Context) {
 	uid := strconv.Itoa(userData.Uid)
 	code, err := newAccessToken(uid)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error of create token")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "database error of create token")
 	}
 
-	// encode uid and token to cookie
-	params := url.Values{}
-	params.Add("AccessCode", code)
-	params.Add("uid", uid)
+	// delete uid
+	userData.Uid = 0
 
-	// add to header
-	cookie := &http.Cookie{
-		Name:     "AccessToken",
-		Value:    params.Encode(),
-		MaxAge:   2592000, // 30 day
-		Path:     "/",
-		Domain:   "." + setting.Servers["main"].Host,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   false,
-		HttpOnly: true,
-	}
-	c.Writer.Header().Add("Set-Cookie", cookie.String())
+	// create new cookie
+	c.Writer.Header().Add("Set-Cookie", cookie.CreateCookie("AccessToken", []string{"AccessCode", "uid"},
+	[]string{code, uid}, 2592000, "/", "."+setting.Servers["main"].Host, http.SameSiteLaxMode,
+	true, true))
+
 	c.JSON(http.StatusOK, gin.H{
 		"user": userData,
 	})
 }
 
+// get root page
+func GetUser(c *gin.Context) {
+	// return root page data
+	c.HTML(http.StatusOK, "index/account", gin.H{
+		"title":       "DCreater",
+		"description": "create your blog",
+		"author":      "林彥賓, https://github.com/Yan-Bin-Lin",
+		"account":     true,
+	})
+}
+
 // insert an user if oid is 0 else update
 func PutUser(c *gin.Context) {
-
 	pw, salt, err := hash.NewPWHashString(c.PostForm("password"), Params.iterations, Params.memory, Params.parallelism, Params.keyLength)
 	if err != nil {
-		log.Error(c, 1500001, err, 0, "Sorry, something error", "rand function error")
+		log.Error(c, apperr.ErrPermissionDenied, err, 0, "Sorry, something error", "rand function error")
 		return
 	}
 	err = database.PutUser(c.PostForm("uid"), c.PostForm("username"), pw, c.PostForm("email"), salt)
 	if err != nil {
-		log.Warn(c, 2400001, err, "sorry, something error. try again", "insert new user fail")
+		log.Warn(c, apperr.ErrWrongArgument, err, "sorry, something error. try again", "insert new user fail")
+		return
 	}
 
-	c.Redirect(http.StatusSeeOther, setting.Servers["main"].Host+":8000")
+	c.Redirect(http.StatusSeeOther, setting.Servers["main"].Host+strconv.Itoa(setting.Servers["main"].Port))
 }
 
-// delect an user
+// delete an user
 func DelUser(c *gin.Context) {
 	if err := database.DelUser(c.PostForm("uid"), c.PostForm("username"), c.PostForm("password")); err != nil {
-		log.Warn(c, 2400001, err, "sorry, something error. try again", "delete user fail")
+		log.Warn(c, apperr.ErrWrongArgument, err, "sorry, something error. try again", "delete user fail")
 	}
 
-	c.Redirect(http.StatusSeeOther, setting.Servers["main"].Host+":8000")
+	c.Redirect(http.StatusSeeOther, setting.Servers["in"].Host+strconv.Itoa(setting.Servers["main"].Port))
 }
 
 // generate a new token and save it
@@ -121,32 +125,18 @@ func newAccessToken(uid string) (string, error) {
 
 // check access token vaild
 func CheckAccessToken(c *gin.Context) {
-
-	var (
-		accessCookie *http.Cookie
-		err          error
-	)
-
-	// check cookie
-	if accessCookie, err = c.Request.Cookie("AccessToken"); err != nil {
-		log.Warn(c, 2401504, err, "access token not found in cookie")
-		c.Abort()
-		return
-	}
-
-	// check access
-	param, err := url.ParseQuery(accessCookie.Value)
+	// get cookie param
+	param, err := common.GetCookieParam(c, "AccessToken");
 	if err != nil {
-		log.Warn(c, 2401504, err, "access token parse fail")
-		c.Abort()
 		return
 	}
+
 	if has, err := database.CheckAccessToken(param.Get("uid"), param.Get("AccessCode"), c.PostForm("oid")); err != nil {
 		log.Warn(c, 1500006, err, "Sorry, something error", "database error of check access token")
 		c.Abort()
 		return
 	} else if !has {
-		log.Warn(c, 2401504, err, "access token parse fail")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "access token parse fail")
 		c.Abort()
 		return
 	}

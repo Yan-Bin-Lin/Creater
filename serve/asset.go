@@ -1,8 +1,9 @@
 package serve
 
 import (
+	"app/apperr"
 	"app/common"
-	"app/logger"
+	"app/log"
 	"app/setting"
 	"app/util/file"
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,6 @@ var uploadParam = []string{"oid", "fileName"}
 
 func UploadFile(c *gin.Context) {
 	form, err := common.BindMultipartForm(c, uploadParam)
-	log.Debug("", form)
 	if err != nil {
 		return
 	}
@@ -22,10 +22,11 @@ func UploadFile(c *gin.Context) {
 	filePath := setting.Servers["main"].FilePath + "/" + form.Value["oid"][0] + "/img";
 	// check exist and create
 	if err := file.Checkdir(filePath); err != nil {
-		log.Warn(c, 1500001, err, "something error in write file", "something error in create folder")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "something error in write file", "something error in create folder")
+		return
 	}
 	if err := file.SaveFile(fileHeader, filePath, form.Value["fileName"][0]); err != nil {
-		log.Warn(c, 1500001, err, "something error in write file")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "something error in write file")
 		return
 	}
 

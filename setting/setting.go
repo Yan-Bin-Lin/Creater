@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	WorkPath = "./config/app/"
 	Config   *ConfigStruct
 	DBs      map[string]*DBStruct
 	Servers  map[string]*ServerStruct
@@ -24,6 +25,7 @@ type ServerStruct struct {
 	ReadTimeout  time.Duration     `yaml:"ReadTimeout,omitempty"`
 	WriteTimeout time.Duration     `yaml:"WriteTimeout,omitempty"`
 	FilePath     string            `yaml:"FilePath,omitempty"`
+	LogPath     string            `yaml:"LogPath"`
 	PostKey      map[string]string `yaml:"PostKey,omitempty"`
 }
 
@@ -44,10 +46,6 @@ type ConfigStruct struct {
 }
 
 type ErrorMapStruct map[int]string
-
-var (
-	WorkPath = "./config/app/"
-)
 
 func init() {
 	if strings.HasSuffix(os.Args[0], ".test") {

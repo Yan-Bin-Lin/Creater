@@ -1,14 +1,14 @@
 package serve
 
 import (
+	"app/apperr"
 	"app/common"
 	"app/database"
-	"app/logger"
+	"app/log"
 	"app/setting"
 	"app/util/file"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -27,20 +27,20 @@ var (
 func GetRoot(c *gin.Context) {
 	blogDatas, err := database.GetRoot(c.DefaultQuery("p", "1"))
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error of getting root page")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "database error of getting root page")
 		return
 	}
 
 	meta, err := json.Marshal(blogDatas)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "parse json error")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "parse json error")
 		return
 	}
 
 	// return root page data
 	c.HTML(http.StatusOK, "index", gin.H{
 		"meta":        string(meta),
-		"title":       "Creater",
+		"title":       "DCreater",
 		"description": "create your blog",
 		"author":      "林彥賓, https://github.com/Yan-Bin-Lin",
 		"root":        true,
@@ -54,7 +54,7 @@ func GetOwner(c *gin.Context) {
 	// check project exist
 	ownerData, err := database.GetOwner(c.Param("owner"))
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error of getting owner")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "database error of getting owner")
 		return
 	}
 
@@ -63,7 +63,7 @@ func GetOwner(c *gin.Context) {
 
 	meta, err := json.Marshal(ownerData)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "parse json error")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "parse json error")
 		return
 	}
 
@@ -78,13 +78,19 @@ func GetOwner(c *gin.Context) {
 
 // create a new owner
 func CreateOwner(c *gin.Context) {
-	if err := database.CreateOwner(c.PostForm("uid"), c.PostForm("uniquename"), c.PostForm("nickname"), c.PostForm("descript")); err != nil {
+	// get cookie param
+	param, err := common.GetCookieParam(c, "AccessToken");
+	if err != nil {
+		return
+	}
+
+	if err := database.CreateOwner(param.Get("uid"), c.Param("owner"), c.PostForm("nickname"), c.PostForm("descript")); err != nil {
 		if err == database.ERR_NAME_CONFLICT {
-			log.Warn(c, 2400001, err, "Name conflict of create owner")
+			log.Warn(c, apperr.ErrWrongArgument, err, "Name conflict of create owner")
 		} else if err == database.ERR_TASK_FAIL {
-			log.Warn(c, 2400001, err, "put owner fail, please check oid and uid correct")
+			log.Warn(c, apperr.ErrWrongArgument, err, "put owner fail, please check oid and uid correct")
 		} else {
-			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of create owner")
+			log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error. please try again", "database error of create owner")
 		}
 		return
 	}
@@ -95,13 +101,21 @@ func CreateOwner(c *gin.Context) {
 
 // update a new owner
 func UpdateOwner(c *gin.Context) {
-	if err := database.UpdateOwner(c.PostForm("uid"), c.PostForm("oid"), c.PostForm("uniquename"), c.PostForm("newuniname"), c.PostForm("nickname"), c.PostForm("descript")); err != nil {
+	// get cookie param
+	param, err := common.GetCookieParam(c, "AccessToken");
+	if err != nil {
+		return
+	}
+
+	log.Debug("ee", param);
+
+	if err := database.UpdateOwner(param.Get("uid"), c.PostForm("oid"), c.Param("owner"), c.PostForm("newuniname"), c.PostForm("nickname"), c.PostForm("descript")); err != nil {
 		if err == database.ERR_NAME_CONFLICT {
-			log.Warn(c, 2400001, err, "Name conflict of update owner")
+			log.Warn(c, apperr.ErrWrongArgument, err, "Name conflict of update owner")
 		} else if err == database.ERR_TASK_FAIL {
-			log.Warn(c, 2400001, err, "put owner fail, please check oid and uid correct")
+			log.Warn(c, apperr.ErrWrongArgument, err, "put owner fail, please check oid and uid correct")
 		} else {
-			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of update owner")
+			log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error. please try again", "database error of update owner")
 		}
 		return
 	}
@@ -111,18 +125,24 @@ func UpdateOwner(c *gin.Context) {
 }
 
 func DelOwner(c *gin.Context) {
-	err := database.DelOwner(c.PostForm("oid"), c.PostForm("uid"), c.PostForm("uniquename"))
+	// get cookie param
+	param, err := common.GetCookieParam(c, "AccessToken");
+	if err != nil {
+		return
+	}
+
+	err = database.DelOwner( param.Get("uid"), c.PostForm("oid"),c.Param("owner"))
 	if err != nil {
 		if err == database.ERR_TASK_FAIL {
-			log.Warn(c, 2400001, err, "delete owner fail, please check oid and owner name correct")
+			log.Warn(c, apperr.ErrWrongArgument, err, "delete owner fail, please check oid and owner name correct")
 		} else {
-			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of delete owner")
+			log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error. please try again", "database error of delete owner")
 		}
 		return
 	}
 
 	if err := os.RemoveAll(setting.Servers["main"].FilePath + "/" + c.PostForm("oid")); err != nil {
-		log.Warn(c, 1500001, err, "something error in delete file")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "something error in delete file")
 		return
 	}
 
@@ -134,17 +154,16 @@ func DelOwner(c *gin.Context) {
 func GetBlog(c *gin.Context) {
 	blogData, err := database.GetBlog(c.Request.URL.Path)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "database error")
 		return
 	} else if blogData == nil {
-		log.Warn(c, 2400001, nil, "parmeter error", "parmeter error")
+		log.Warn(c, apperr.ErrWrongArgument, nil, "parmeter error", "parmeter error")
 		return
 	}
-	log.Debug("", blogData)
 
 	meta, err := json.Marshal(blogData)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "parse json error")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "parse json error")
 		return
 	}
 
@@ -168,7 +187,7 @@ func GetBlog(c *gin.Context) {
 		err = file.ParseTmpl(c.Writer, data, setting.Servers["main"].FilePath+"/"+strconv.Itoa(blogData.Oid)+"/"+fileName+"/"+fileName+".md")
 	}
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "read file error")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "read file error")
 		return
 	}
 
@@ -181,9 +200,9 @@ func CreateBlog(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	log.Debug("", form)
+
 	if form.Value["blogType"][0] != "project" && len(form.File["content"]) == 0 {
-		log.Warn(c, 2400001, nil, "multy part form miss match key content")
+		log.Warn(c, apperr.ErrWrongArgument, nil, "multy part form miss match key content")
 		return
 	}
 
@@ -191,20 +210,20 @@ func CreateBlog(c *gin.Context) {
 	superUrl, blog := splitWork(c.Request.URL.Path)
 	err = database.CreateBlog(form.Value["oid"][0], form.Value["superid"][0], blog, form.Value["descript"][0], blogType[form.Value["blogType"][0]], strings.Join(superUrl, "/"))
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of update blog")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error. please try again", "database error of update blog")
 		return
 	}
 
 	// get data
 	blogData, err := database.GetBlog(c.Request.URL.Path)
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error", "database error")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error", "database error")
 		return
 	}
 
 	// write file
 	if form.Value["blogType"][0] == "article" {
-		writeFile(c, form, strconv.Itoa(blogData.Bid))
+		common.WriteFormFile(c, form, strconv.Itoa(blogData.Bid))
 	}
 
 	c.Header("Location", "/.")
@@ -226,13 +245,13 @@ func UpdateBlog(c *gin.Context) {
 		form.Value["bid"][0], blog, form.Value["newname"][0], form.Value["descript"][0], c.Request.URL.Path,
 		form.Value["newsuperUrl"][0])
 	if err != nil {
-		log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of update blog")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error. please try again", "database error of update blog")
 		return
 	}
 
 	// write file
 	if form.Value["blogType"][0] == "article" && len(form.File["content"]) != 0 {
-		writeFile(c, form, form.Value["bid"][0])
+		common.WriteFormFile(c, form, form.Value["bid"][0])
 	}
 
 	c.Header("Location", c.Request.URL.Path)
@@ -242,15 +261,15 @@ func UpdateBlog(c *gin.Context) {
 func DelBlog(c *gin.Context) {
 	if err := database.DelBlog(c.PostForm("oid"), c.PostForm("bid"), c.Request.URL.Path); err != nil {
 		if err == database.ERR_TASK_FAIL {
-			log.Warn(c, 2400001, err, "delete owner fail, please check oid and owner name correct")
+			log.Warn(c, apperr.ErrWrongArgument, err, "delete owner fail, please check oid and owner name correct")
 		} else {
-			log.Warn(c, 1500001, err, "Sorry, something error. please try again", "database error of delete owner")
+			log.Warn(c, apperr.ErrPermissionDenied, err, "Sorry, something error. please try again", "database error of delete owner")
 		}
 		return
 	}
 
 	if err := os.RemoveAll(setting.Servers["main"].FilePath + "/" + c.PostForm("oid") + "/" + c.PostForm("bid")); err != nil {
-		log.Warn(c, 1500001, err, "something error in delete file")
+		log.Warn(c, apperr.ErrPermissionDenied, err, "something error in delete file")
 		return
 	}
 
@@ -261,23 +280,4 @@ func DelBlog(c *gin.Context) {
 func splitWork(url string) ([]string, string) {
 	works := strings.Split(url, "/")
 	return works[:len(works)-1], works[len(works)-1]
-}
-
-// write file and parse to html
-func writeFile(c *gin.Context, form *multipart.Form, fileName string) {
-	fileHeader := form.File["content"][0]
-	filePath := setting.Servers["main"].FilePath + "/" + form.Value["oid"][0] + "/" + fileName
-	// check exist and create
-	if err := file.Checkdir(filePath); err != nil {
-		log.Warn(c, 1500001, err, "something error in write file", "something error in create folder")
-	}
-	go func() {
-		if err := file.SaveMarkdown2Tmpl(fileHeader, filePath, fileName+".html"); err != nil {
-			log.Warn(c, 1500001, err, "something error in write file", "something error in parse markdown")
-		}
-	}()
-	if err := file.SaveFile(fileHeader, filePath, fileName+".md"); err != nil {
-		log.Warn(c, 1500001, err, "something error in write file")
-		return
-	}
 }

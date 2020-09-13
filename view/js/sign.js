@@ -18,9 +18,13 @@ $("#SignForm").submit(function(e) {
             withCredentials: true
         },
         success: function(data){
-            HideSignContainer();
+            SetUserCookie(data.user)
+            window.location.reload();
         },
         error: function(jqXHR, textStatus, errorThrown){
+            console.log(jqXHR)
+            console.log(textStatus)
+            console.log(errorThrown)
             $("#AlertWrongParam").show();
         }
     });
@@ -40,4 +44,10 @@ $("#closeSignBtn").on("click", function(){
 
 function HideSignContainer() {
     $("#singContainer").hide();
+}
+
+function SetUserCookie(user) {
+    let sub = [["text", "subOid"], ["text", "subOuniquename"],["text", "subOnickname"],["text", "subOdescription"]];
+    split_strs(user, sub)
+    document.cookie = "OwnerList=" + JSON.stringify(user) + ";Path=/;domain=.dcreater.com;Max-Age=2592000;SameSite=Lax";
 }

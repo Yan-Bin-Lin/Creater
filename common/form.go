@@ -1,7 +1,8 @@
 package common
 
 import (
-	"app/logger"
+	"app/apperr"
+	"app/log"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"mime/multipart"
@@ -21,12 +22,12 @@ func checkParam(param []string, form *multipart.Form) string {
 func BindMultipartForm(c *gin.Context, param []string) (*multipart.Form, error) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		log.Warn(c, 2400001, err, "binding error of put multipart form", "binding error of put multipart form")
+		log.Warn(c, apperr.ErrWrongArgument, err, "binding error of put multipart form", "binding error of put multipart form")
 		return nil, err
 	}
 	if v := checkParam(param, form); v != "" {
-		var errStr = "multy part form miss match key "+v
-		log.Warn(c, 2400001, nil, errStr)
+		errStr := "multi part form miss match key "+v
+		log.Warn(c, apperr.ErrWrongArgument, nil, errStr)
 		return nil, errors.New(errStr)
 	}
 	return form, nil

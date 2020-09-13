@@ -17,6 +17,7 @@ func AccountRouter() *gin.Engine {
 	r.LoadHTMLGlob("view/html/*/*")
 
 	r.POST("/login", serve.Login)
+	r.PUT("/user", serve.PutUser)
 
 	return r
 }

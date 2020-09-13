@@ -2,7 +2,7 @@ let editor;
 // option of blog type
 let blogType;
 // initial value of blog content
-let ititialContent = "";
+let initialContent = "";
 
 // check hashtag
 HandleNewPost();
@@ -31,7 +31,7 @@ function CreateEditor() {
         height: '500px',
         initialEditType: 'wysiwyg',
         previewStyle: 'tab',
-        initialValue: ititialContent,
+        initialValue: initialContent,
         plugins: [codeSyntaxHighlight, colorSyntax, tableMergedCell],
         hooks: {
             'addImageBlobHook': imageUpload
@@ -45,7 +45,7 @@ function imageUpload(blob, callback) {
     let path = window.location.pathname.split("/").slice(1);
     let oid = path.length > 1 ? meta.boid : meta.oid;
     let name = geTimeNowStr();
-    let url = "http://asset.dcreater.com/file/img/" + oid + "/" + name;
+    let url = "https://asset.dcreater.com/file/img/" + oid + "/" + name;
     data.append('content', blob);
     data.append('fileName', name);
     data.append('oid', oid);
@@ -181,7 +181,7 @@ function FillEditor() {
         $("#NewBlogName").val(meta.bname);
         $("#NewBlogDescription").val(meta.bdescription);
         $("#TypeSelect").val(meta.btype).prop('disabled', true);
-        ititialContent = $("#metaContent").html();
+        initialContent = $("#metaContent").html();
     }
 }
 

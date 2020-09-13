@@ -24,12 +24,12 @@ func GetUser(uid int) (*UserOut, error) {
 	return userData, nil
 }
 
-// insert an user if oid is 0 else update
+// insert an user if uid is 0 else update
 func PutUser(uid, username, password, email, salt string) error {
 	return checkAffect(db.Exec("call put_user(?, ?, ?, ?, ?)", uid, username, password, email, salt))
 }
 
-// delect an user
+// delete an user
 func DelUser(uid, username, password string) error {
 	return checkAffect(db.Exec("call del_user(?, ?, ?)", uid, username, password))
 }

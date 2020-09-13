@@ -6,7 +6,7 @@ import (
 )
 
 // GenerateRandomBytes returns securely generated random bytes.
-// It will return an error if the system's secure random
+// It will return an rror if the system's secure random
 // number generator fails to function correctly
 func GetRandomBytes(n int) ([]byte, error) {
 	b := make([]byte, n)

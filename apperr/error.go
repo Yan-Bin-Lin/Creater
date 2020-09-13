@@ -1,25 +1,9 @@
-package error
+package apperr
 
 import (
 	"app/setting"
 	"app/util/debug"
-	"github.com/gin-gonic/gin"
 )
-
-// return error for logger
-type ErrorReturn struct {
-	ErrorData *ErrorDataStruct
-	ErrorMeta *ErrorMetaStruct
-}
-
-func (e *ErrorReturn) Error() string {
-	return e.ErrorData.Msg
-}
-
-// implement Unwrap for error in go 1.13
-func (e *ErrorReturn) Unwrap() error {
-	return e.ErrorMeta.Error
-}
 
 // struct of error message to let out
 type ErrorDataStruct struct {
@@ -34,22 +18,28 @@ type ErrorMetaStruct struct {
 	Stack []*debug.FuncDataStruct
 }
 
+// return error for log
+type ErrorReturn struct {
+	ErrorData *ErrorDataStruct
+	ErrorMeta *ErrorMetaStruct
+}
+
+func (er *ErrorReturn) Error() string {
+	return er.ErrorData.Msg
+}
+
+// implement Unwrap for error in go 1.13
+func (er *ErrorReturn) Unwrap() error {
+	return er.ErrorMeta.Error
+}
+
 func (ems *ErrorMetaStruct) GetStack() []*debug.FuncDataStruct {
 	return ems.Stack
 }
 
 // implement Unwrap for error in go 1.13
-func (e *ErrorMetaStruct) Unwrap() error {
-	return e.Error
-}
-
-// check if error code exist
-func GetMsg(code int) string {
-	if val, ok := setting.ErrorMap[code]; ok {
-		return val
-	} else {
-		return setting.ErrorMap[0]
-	}
+func (ems *ErrorMetaStruct) Unwrap() error {
+	return ems.Error
 }
 
 //generate new error data
@@ -66,17 +56,6 @@ func NewErrorData(code int, customMsg string) (eData *ErrorDataStruct) {
 		}
 	}
 	return
-}
-
-// split error code
-// return errorType, httpStatus, customCode
-func SplitCode(code int) (int, int, int) {
-	if _, ok := setting.ErrorMap[code]; !ok {
-		//error code not found
-		return 0, 0, 0
-	}
-
-	return code / 1000000, (code % 1000000) / 1000, code % 1000
 }
 
 //generate new error meta
@@ -101,12 +80,7 @@ func NewErrorReturn(code int, err error, stack []*debug.FuncDataStruct, customMs
 	} else {
 		errorData = NewErrorData(code, "")
 	}
-	/*
-		if errorData.Msg == setting.ErrorMap[0] {
-			if err != nil {
-				errorData.Msg = err.Error()
-			}
-		}*/
+
 	if len(customMsg) > 1 {
 		errorMeta = NewErrorMeta(err, stack, customMsg[1])
 	} else {
@@ -116,14 +90,22 @@ func NewErrorReturn(code int, err error, stack []*debug.FuncDataStruct, customMs
 	return &ErrorReturn{errorData, errorMeta}
 }
 
-// return wrap error type
-func New(code int, err error, skip int, customMsg ...string) (er error) {
-	// NewErrorReturn
-	if setting.Servers["main"].RunMode == gin.DebugMode {
-		er = NewErrorReturn(code, err, debug.GetCallStack(skip+1), customMsg...) // skip this level
+// check if error code exist
+func GetMsg(code int) string {
+	if val, ok := setting.ErrorMap[code]; ok {
+		return val
 	} else {
-		er = NewErrorReturn(code, err, nil, customMsg...)
+		return setting.ErrorMap[0]
+	}
+}
+
+// split error code
+// return errorType, httpStatus, customCode
+func SplitCode(code int) (int, int, int) {
+	if _, ok := setting.ErrorMap[code]; !ok {
+		//error code not found
+		return 0, 0, 0
 	}
 
-	return
+	return code / 1000000, (code % 1000000) / 1000, code % 1000
 }

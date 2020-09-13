@@ -51,7 +51,14 @@ type Article struct {
 type UserOut struct {
 	Uid      int    `json:"uid" xorm:"not null pk autoincr INT(11) 'uid'"`
 	Username string `json:"username" xorm:"not null comment('account number') VARCHAR(40) 'username'"`
-	Owner    `xorm:"extends"`
+	OwnerSub `xorm:"extends"`
+}
+
+type OwnerSub struct {
+	Su             string `json:"subOid" xorm:"VARCHAR(512) 'subOid'"`
+	SubUniquename  string `json:"subOuniquename" xorm:"VARCHAR(512) 'subOuniquename'"`
+	SubNickname    string `json:"subOnickname" xorm:"VARCHAR(512) 'subOnickname'"`
+	SubDescription string `json:"subOdescription" xorm:"VARCHAR(512) 'subOdescription'"`
 }
 
 type OwnerOut struct {

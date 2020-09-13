@@ -15,11 +15,9 @@ var (
 )
 
 func main() {
-	runServe("main", router.HostSwitch{router.MainRouter()})
-
-	runServe("account", router.HostSwitch{router.AccountRouter()})
-
-	runServe("asset", router.HostSwitch{router.AssetRouter()})
+	runServe("main", router.HostSwitch{Engine: router.MainRouter()})
+	runServe("account", router.HostSwitch{Engine: router.AccountRouter()})
+	runServe("asset", router.HostSwitch{Engine: router.AssetRouter()})
 
 	if err := g.Wait(); err != nil {
 		log.Fatal(err)

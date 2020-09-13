@@ -1,4 +1,4 @@
-blogTypeInvert = {
+let blogTypeInvert = {
     1: "project",
     2: "article"
 };
@@ -61,7 +61,7 @@ function fill_content(tmplid, data, filler, len) {
     if (tmpl.length === 0) {
         return ""
     }
-    let result = "";
+    let result = "";get_tmpl
     for (let i = 0; i < len; i++) {
         fill_tmpl(tmpl, data, filler, i);
         result += tmpl[0].outerHTML;
@@ -123,8 +123,8 @@ function rend_content() {
 
     let context = content.html();
 
-    const { Editor } = toastui;
-    const { codeSyntaxHighlight, tableMergedCell } = Editor.plugin;
+    const {Editor} = toastui;
+    const {codeSyntaxHighlight, tableMergedCell} = Editor.plugin;
 
     // create viewer
     const viewer = Editor.factory({
@@ -138,6 +138,37 @@ function rend_content() {
     // hide origin
     content.after("<div id='metaContent' style='display:none'>" + context + "</div>");
 }
+
+// return btn event
+$("#DeleteBlogBtn").on("click", function() {
+    // check url
+    let path = window.location.pathname.split('/');
+    if(path.length < 2 || path[3] === ""){
+        return;
+    }
+
+    let data = new FormData();
+    data.append("oid", OwnerSelectNav.val());
+    data.append("bid", meta.bid);
+
+    $.ajax({
+        url: window.location.pathname,
+        type: 'DELETE',
+        data: data,
+        cache: false,
+        contentType: false,
+        processData: false,
+        withCredentials: true,
+        success: function(result) {
+            window.location.href = "https://dcreater.com" + path.slice(0, path.length - 1).join('/');
+        },
+        error: function(jqXHR, textStatus, errorThrown){
+            console.log(jqXHR);
+            console.log(textStatus);
+            console.log(errorThrown);
+        },
+    });
+});
 
 /*
 // return btn event

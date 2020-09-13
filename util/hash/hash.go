@@ -29,7 +29,7 @@ func NewPWHash(pw string, time, memory uint32, threads uint8, keyLen uint32) ([]
 	return argon2.IDKey([]byte(pw), salt, time, memory, threads, keyLen), salt, nil
 }
 
-// get hash string in base64 url raw encode of argon2 for password hash
+// generate new hash string in base64 url raw encode with salt of argon2 for password hash
 func NewPWHashString(pw string, time, memory uint32, threads uint8, keyLen uint32) (string, string, error) {
 	hash, salt, err := NewPWHash(pw, time, memory, threads, keyLen)
 	if err != nil {

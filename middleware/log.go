@@ -1,7 +1,8 @@
 package middleware
 
 import (
-	"app/logger"
+	"app/log"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -31,7 +32,7 @@ func Logging() gin.HandlerFunc {
 			end = end.UTC()
 		}
 
-		// get logger msg
+		// get log msg
 		var (
 			LogMsg *log.LogDataStruct
 			ok     = false
@@ -56,7 +57,16 @@ func Logging() gin.HandlerFunc {
 			lv = zap.InfoLevel
 		}
 
-		// write logger
+		// write log
+		//fmt.Print(lv, c.Writer.Status(), c.Request.Method , path, query, c.ClientIP(), c.Request.UserAgent(), end.Format(timeFormat), latency, LogMsg)
+
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println(err) // 這已經是頂層的 UI 介面了，想以自己的方式呈現錯誤
+				fmt.Println(log.Logger)
+			}
+		}()
+
 		if ce := log.Logger.Check(lv, path); ce != nil {
 			ce.Write(
 				zap.Int("status", c.Writer.Status()),

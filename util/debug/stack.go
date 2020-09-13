@@ -14,14 +14,7 @@ type FuncDataStruct struct {
 
 // get the function data of caller, start from 0
 func GetFuncData(skipNum ...int) *FuncDataStruct {
-	// check skip number
-	var skip int
-	if len(skipNum) > 0 {
-		skip = skipNum[0]
-	} else {
-		skip = WrapLv
-	}
-
+	skip := getWrapLv(skipNum...)
 	pc, file, line, ok := runtime.Caller(skip + 1) // add one to skip this function
 	if !ok {
 		return nil
@@ -36,12 +29,7 @@ func GetFuncData(skipNum ...int) *FuncDataStruct {
 // stack returns a nicely formatted stack frame, skipping skip frames.
 func GetCallStack(skipNum ...int) []*FuncDataStruct {
 	// check skip number
-	var skip int
-	if len(skipNum) > 0 {
-		skip = skipNum[0]
-	} else {
-		skip = WrapLv
-	}
+	skip := getWrapLv(skipNum...)
 
 	var stack []*FuncDataStruct
 
@@ -54,5 +42,15 @@ func GetCallStack(skipNum ...int) []*FuncDataStruct {
 		stack = append(stack, funcData)
 	}
 
-	return stack[:len(stack)-2] //skip runtime.main and exist
+	//skip runtime.main and exist
+	return stack[:len(stack)-2]
+}
+
+func getWrapLv(skipNum ...int) int {
+	// check skip number
+	if len(skipNum) > 0 {
+		return skipNum[0] + WrapLv
+	} else {
+		return WrapLv
+	}
 }

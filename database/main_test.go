@@ -36,7 +36,7 @@ var (
 	blogFile2     = "blogFile2"
 	now           = time.Now()
 	user          = &User{1, "testapp", "helloworld", "a@b.tw ", now}
-	ownerOut      = &OwnerOut{Owner{Oid: 1, Uid: 1, Nickname: nickNmae, Uniquename: uniqueName, Createtime: now, Updatetime: now}, Project{}, Blog{}, ""}
+	//ownerOut      = &OwnerOut{Owner{Oid: 1, Uid: 1, Nickname: nickNmae, Uniquename: uniqueName, Createtime: now, Updatetime: now}, Project{}, Blog{}, ""}
 )
 
 func TestMain(m *testing.M) {
@@ -50,18 +50,18 @@ func TestMain(m *testing.M) {
 func TestDatabse_PutOwner_Insert(t *testing.T) {
 	err := PutOwner("0", "1", uniqueName, nickNmae)
 	if err != nil {
-		t.Errorf("Fail to insert new owner. error is %s\n", err)
+		t.Errorf("Fail to insert new owner. apperr is %s\n", err)
 	}
 
 	err = PutOwner("0", "1", uniqueName2, nickNmae2)
 	if err != nil {
-		t.Errorf("Fail to insert new owner. error is %s\n", err)
+		t.Errorf("Fail to insert new owner. apperr is %s\n", err)
 	}
 
 	// test name conflict
 	err = PutOwner("0", "0", uniqueName, nickNmae)
 	if err == nil {
-		t.Errorf("Fail to detect error of name conflict. error is %s\n", err)
+		t.Errorf("Fail to detect apperr of name conflict. apperr is %s\n", err)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestDatabase_GetOwner(t *testing.T) {
 	for index, value := range getTest {
 		out, err := GetOwner(value.owner)
 		if err != nil {
-			t.Errorf("In range %d. Fail to get inserted owner. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to get inserted owner. apperr is %s\n", index, err)
 		} else if out != nil {
 			out.Owner.Createtime = now
 			out.Owner.Updatetime = now
@@ -94,32 +94,32 @@ func TestDatabase_PutOwner_Update(t *testing.T) {
 	var updateTest = []string{"foo", uniqueName}
 	for index, value := range updateTest {
 		if err := PutOwner(1, "1", value, nickNmae); err != nil {
-			t.Errorf("In range %d. Fail to update owner. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to update owner. apperr is %s\n", index, err)
 		}
 		out, err := GetOwner(value)
 		if err != nil || out == nil {
-			t.Errorf("In range %d. Fail to get updated owner. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to get updated owner. apperr is %s\n", index, err)
 		} else if out.Uniquename != value {
 			t.Errorf("In range %d. miss match owner. out = %v, espect unique name is %s\n", index, out, value)
 		}
 	}
 
 	if err := PutOwner(1, "NULL", uniqueName2, nickNmae); err == nil {
-		t.Errorf("Fail to detect error of name conflict. error is %s\n", err)
+		t.Errorf("Fail to detect apperr of name conflict. apperr is %s\n", err)
 	}
 }
 
 func TestDatabase_DelOwner(t *testing.T) {
 	if err := DelOwner("1", "1", "test_delete_name"); err == nil {
-		t.Errorf("Fail to detect error of no delete. error is %s\n", err)
+		t.Errorf("Fail to detect apperr of no delete. apperr is %s\n", err)
 	}
 
 	if err := DelOwner("2", "1", uniqueName2); err != nil {
-		t.Errorf("Fail to delete owner %s. error is %v\n", uniqueName2, err)
+		t.Errorf("Fail to delete owner %s. apperr is %v\n", uniqueName2, err)
 	}
 
 	if out, err := GetOwner(uniqueName2); err != nil {
-		t.Errorf("something error of get owner %s. error is %v", uniqueName2, err)
+		t.Errorf("something apperr of get owner %s. apperr is %v", uniqueName2, err)
 	} else if out != nil {
 		t.Errorf("Fail to delete owner %s. out owner is %v\n", uniqueName2, out)
 	}
@@ -128,37 +128,37 @@ func TestDatabase_DelOwner(t *testing.T) {
 // create a new project
 func TestDatabase_PutProject_Insert(t *testing.T) {
 	if err := PutProject(uniqueName, []string{superprojName}, "1", "0", "", "0", "first project", superprojurl); err != nil {
-		t.Errorf("Fail to insert new project. error is %s\n", err)
+		t.Errorf("Fail to insert new project. apperr is %s\n", err)
 	}
 
 	if err := PutProject(uniqueName, []string{superprojName, projName}, "1", "1", superprojurl, "0", "second project", projurl); err != nil {
-		t.Errorf("Fail to insert new project. error is %s\n", err)
+		t.Errorf("Fail to insert new project. apperr is %s\n", err)
 	}
 
 	if err := PutProject(uniqueName, []string{superprojName, projName, superprojName}, "1", "2", projurl, "0", "third project", subprojurl); err != nil {
-		t.Errorf("Fail to insert new project. error is %s\n", err)
+		t.Errorf("Fail to insert new project. apperr is %s\n", err)
 	}
 
 	if err := PutProject(uniqueName, []string{superprojName, projName, superprojName}, "1", "0", projurl, "0", "fail project", superprojurl); err == nil {
-		t.Errorf("Fail to detect error of name conflict. error is %s\n", err)
+		t.Errorf("Fail to detect apperr of name conflict. apperr is %s\n", err)
 	}
 }
 
 func TestDatabase_GetProject(t *testing.T) {
 	if projs, err := GetProject(superprojurl); err != nil {
-		t.Errorf("In range d. Fail to get inserted owner. error is %s\n", err)
+		t.Errorf("In range d. Fail to get inserted owner. apperr is %s\n", err)
 	} else {
 		t.Log(projs)
 	}
 
 	if projs, err := GetProject(projurl); err != nil {
-		t.Errorf("In range d. Fail to get inserted owner. error is %s\n", err)
+		t.Errorf("In range d. Fail to get inserted owner. apperr is %s\n", err)
 	} else {
 		t.Log(projs)
 	}
 
 	if projs, err := GetProject(subprojurl); err != nil {
-		t.Errorf("In range d. Fail to get inserted owner. error is %s\n", err)
+		t.Errorf("In range d. Fail to get inserted owner. apperr is %s\n", err)
 	} else {
 		t.Log(projs)
 	}
@@ -169,11 +169,11 @@ func TestDatabase_PutProject_Update(t *testing.T) {
 	var updateTest = []string{"foo", superprojName}
 	for index, value := range updateTest {
 		if err := PutProject(uniqueName, []string{value}, "1", "0", "", "1", "new description", superprojurl); err != nil {
-			t.Errorf("In range %d. Fail to update project. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to update project. apperr is %s\n", index, err)
 		}
 		out, err := GetProject(superprojurl)
 		if err != nil || out == nil {
-			t.Errorf("In range %d. Fail to get updated project. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to get updated project. apperr is %s\n", index, err)
 		} else if out[0].Project.Name != value {
 			t.Errorf("In range %d. miss match project. out = %v, espect unique name is %s\n", index, out, value)
 		}
@@ -181,11 +181,11 @@ func TestDatabase_PutProject_Update(t *testing.T) {
 
 	for index, value := range updateTest {
 		if err := PutProject(uniqueName, []string{uniqueName, value}, "1", "2", projurl, "3", "new sub description", subprojurl); err != nil {
-			t.Errorf("In range %d. Fail to update project. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to update project. apperr is %s\n", index, err)
 		}
 		out, err := GetProject(superprojurl)
 		if err != nil || out == nil {
-			t.Errorf("In range %d. Fail to get updated project. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to get updated project. apperr is %s\n", index, err)
 		} else if out[0].Project.Name != value {
 			t.Errorf("In range %d. miss match project. out = %v, espect unique name is %s\n", index, out, value)
 		}
@@ -194,19 +194,19 @@ func TestDatabase_PutProject_Update(t *testing.T) {
 
 func TestDatabase_DelProiect(t *testing.T) {
 	if err := DelProject(uniqueName, projName, "1", "4"); err == nil {
-		t.Errorf("Fail to detect error of no delete. error is %s\n", err)
+		t.Errorf("Fail to detect apperr of no delete. apperr is %s\n", err)
 	}
 
 	if err := DelProject(uniqueName, projName, "1", "2"); err != nil {
-		t.Errorf("Fail to delete project %s. error is %v\n", projName, err)
+		t.Errorf("Fail to delete project %s. apperr is %v\n", projName, err)
 	}
 
 	if err := DelProject(uniqueName, subprojName, "1", "3"); err != nil {
-		t.Errorf("Fail to delete project %s. error is %v\n", subprojName, err)
+		t.Errorf("Fail to delete project %s. apperr is %v\n", subprojName, err)
 	}
 
 	if out, err := GetProject(projurl); err != nil {
-		t.Errorf("something error of get project %s. error is %v", projName, err)
+		t.Errorf("something apperr of get project %s. apperr is %v", projName, err)
 	} else if out != nil {
 		t.Errorf("Fail to delete project %s. out project is %v\n", projName, out)
 	}
@@ -214,27 +214,27 @@ func TestDatabase_DelProiect(t *testing.T) {
 
 func TestDatabase_PutBlog_Insert(t *testing.T) {
 	if err := PutBlog("1", uniqueName, superprojurl, "0", blogName, "1", "1", "first blog", "1", blogFile, nil); err != nil {
-		t.Errorf("Fail to insert new blog. error is %s\n", err)
+		t.Errorf("Fail to insert new blog. apperr is %s\n", err)
 	}
 
 	if err := PutBlog("1", uniqueName, superprojurl, "0", blogName2, "1", "2", "second blog", "1", blogFile2, nil); err != nil {
-		t.Errorf("Fail to insert new blog. error is %s\n", err)
+		t.Errorf("Fail to insert new blog. apperr is %s\n", err)
 	}
 
 	if err := PutBlog("1", uniqueName, superprojurl, "0", blogName2, "1", "2", "second blog", "1", blogFile2, nil); err == nil {
-		t.Errorf("Fail to detect error of name conflict. error is %s\n", err)
+		t.Errorf("Fail to detect apperr of name conflict. apperr is %s\n", err)
 	}
 }
 
 func TestDatabase_GetBlog(t *testing.T) {
 	if blog, err := GetBlog(blogFile); err != nil {
-		t.Errorf("In range d. Fail to get inserted blog. error is %s\n", err)
+		t.Errorf("In range d. Fail to get inserted blog. apperr is %s\n", err)
 	} else {
 		t.Log(blog)
 	}
 
 	if blog, err := GetBlog(blogFile2); err != nil {
-		t.Errorf("In range d. Fail to get inserted blog. error is %s\n", err)
+		t.Errorf("In range d. Fail to get inserted blog. apperr is %s\n", err)
 	} else {
 		t.Log(blog)
 	}
@@ -244,11 +244,11 @@ func TestDatabase_PutBlog_Update(t *testing.T) {
 	var updateTest = []string{"foo", blogName}
 	for index, value := range updateTest {
 		if err := PutBlog("1", uniqueName, superprojurl, "1", value, "1", "3", "new description", "1", blogFile, nil); err != nil {
-			t.Errorf("In range %d. Fail to update project. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to update project. apperr is %s\n", index, err)
 		}
 		out, err := GetBlog(blogFile)
 		if err != nil || out == nil {
-			t.Errorf("In range %d. Fail to get updated project. error is %s\n", index, err)
+			t.Errorf("In range %d. Fail to get updated project. apperr is %s\n", index, err)
 		} else if out.Blog.Name != value {
 			t.Errorf("In range %d. miss match project. out = %v, espect unique name is %s\n", index, out, value)
 		}
@@ -257,15 +257,15 @@ func TestDatabase_PutBlog_Update(t *testing.T) {
 
 func TestDatabase_DelBlog(t *testing.T) {
 	if err := DelBlog("1", "1", "1", blogFile2); err == nil {
-		t.Errorf("Fail to detect error of no delete. error is %s\n", err)
+		t.Errorf("Fail to detect apperr of no delete. apperr is %s\n", err)
 	}
 
 	if err := DelBlog("1", "1", "2", blogFile2); err != nil {
-		t.Errorf("Fail to delete project %s. error is %v\n", projName, err)
+		t.Errorf("Fail to delete project %s. apperr is %v\n", projName, err)
 	}
 
 	if out, err := GetBlog(blogFile2); err != nil {
-		t.Errorf("something error of get blog %s. error is %v", projName, err)
+		t.Errorf("something apperr of get blog %s. apperr is %v", projName, err)
 	} else if out != nil {
 		t.Errorf("Fail to delete blog %s. out blog is %v\n", projName, out)
 	}
